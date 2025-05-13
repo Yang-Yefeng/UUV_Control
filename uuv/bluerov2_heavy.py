@@ -1,5 +1,5 @@
 import numpy as np
-
+from typing import Union
 from utils.utils import *
 
 
@@ -183,10 +183,10 @@ class bluerov2_heavy:
         self.g_eta = np.zeros(6)  # 重力与浮力组成的等效项
         self.F_motor = np.zeros(self.N_m)  # 8个电机的推力
 
-        self.cal_J_eta(phi=self.eta[3], theta=self.eta[4], psi=self.eta[5])
+        self.cal_J_eta(self.uuv_att_cb())
         self.cal_C(self.nu)
         self.cal_D(self.nu)
-        self.cal_g_eta(phi=self.eta[3], theta=self.eta[4])
+        self.cal_g_eta(self.uuv_att_cb())
 
         self.F_max = self.cal_F(1.0)  # 电机最大推力 30.4
         self.F_min = self.cal_F(-1.0)  # 电机最小推力 -30.4
@@ -195,22 +195,57 @@ class bluerov2_heavy:
         self.n = 1
 
     @staticmethod
-    def J1(phi, theta, psi) -> np.ndarray:
-        return np.dot(R_z_psi(psi), np.dot(R_y_theta(theta), R_x_phi(phi)))
+    def J1(att: Union[np.ndarray, list]) -> np.ndarray:
+        return np.dot(R_z_psi(att[2]), np.dot(R_y_theta(att[1]), R_x_phi(att[0])))
 
     @staticmethod
-    def J2(phi, theta) -> np.ndarray:
-        return np.array([[1, S(phi) * T(theta), C(phi) * T(theta)],
-                         [0, C(phi), -S(phi)],
-                         [0, S(phi) / C(theta), C(phi) / C(theta)]])
+    def J2(att: Union[np.ndarray, list]) -> np.ndarray:
+        return np.array([[1, S(att[0]) * T(att[1]), C(att[0]) * T(att[1])],
+                         [0, C(att[0]), -S(att[0])],
+                         [0, S(att[0]) / C(att[1]), C(att[0]) / C(att[1])]])
+
+    @staticmethod
+    def dot_J1(att: Union[np.ndarray, list], dot_att: Union[np.ndarray, list]):
+        res = np.zeros((3, 3))
+        [phi, theta, psi] = att
+        [dphi, dtheta, dpsi] = dot_att
+        res[0, 0] = -S(psi) * dpsi * C(theta) - C(psi) * S(theta) * dtheta
+        res[0, 1] = -C(psi) * dpsi * C(phi) + S(psi) * S(phi) * dphi - S(psi) * dpsi * S(theta) * S(phi) + C(psi) * C(theta) * dtheta * S(phi) + C(psi) * S(theta) * C(phi) * dphi
+        res[0, 2] = C(psi) * dpsi * S(phi) + S(psi) * C(phi) * dphi - S(psi) * dpsi * C(phi) * S(theta) - C(psi) * S(phi) * dphi * S(theta) + C(psi) * C(phi) * C(theta) * dtheta
+        res[1, 0] = C(psi) * dpsi * C(theta) - S(psi) * S(theta) * dtheta
+        res[1, 1] = -S(psi) * dpsi * C(phi) - C(psi) * S(phi) * dphi + C(phi) * dphi * S(theta) * S(psi) + S(phi) * C(theta) * dtheta * S(psi) + S(phi) * S(theta) * C(psi) * dpsi
+        res[1, 2] = S(psi) * dpsi * S(phi) - C(psi) * C(phi) * dphi + C(theta) * dtheta * S(psi) * C(phi) + S(theta) * C(psi) * dpsi * C(phi) - S(theta) * S(psi) * S(phi) * dphi
+        res[2, 0] = -C(theta) * dtheta
+        res[2, 1] = -S(theta) * dtheta * S(phi) + C(theta) * C(phi) * dphi
+        res[2, 2] = -S(theta) * dtheta * C(phi) - C(theta) * S(phi) * dphi
+        return res
+
+    @staticmethod
+    def dot_J2(att: Union[np.ndarray, list], dot_att: Union[np.ndarray, list]):
+        res = np.zeros((3, 3))
+        [phi, theta, _] = att
+        [dphi, dtheta, _] = dot_att
+        res[0, 0] = 1.
+        res[0, 1] = C(phi) * dphi * T(theta) + S(phi) * dtheta / (C(theta) ** 2)
+        res[0, 2] = -S(phi) * dphi * T(theta) + C(phi) * dtheta / (C(theta) ** 2)
+        res[1, 0] = 0.
+        res[1, 1] = -S(phi) * dphi
+        res[1, 2] = -C(phi) * dphi
+        res[2, 0] = 0.
+        res[2, 1] = (C(phi) * dphi * C(theta) + S(phi) * S(theta) * dtheta) / (C(theta) ** 2)
+        res[2, 2] = (-S(phi) * dphi * C(theta) + C(phi) * S(theta) * dtheta) / (C(theta) ** 2)
+        return res
+
+    def cal_dot_J_eta(self, att: Union[np.ndarray, list], dot_att: Union[np.ndarray, list]):
+        return np.vstack((np.hstack((self.dot_J1(att, dot_att), np.zeros((3, 3)))), np.hstack((np.zeros((3, 3)), self.dot_J2(att, dot_att)))))
 
     @staticmethod
     def J3(alpha) -> np.ndarray:
         return R_z_psi(alpha)
 
-    def cal_J_eta(self, phi, theta, psi):
-        self.J_eta[0:3, 0:3] = self.J1(phi, theta, psi)[:]
-        self.J_eta[3:6, 3:6] = self.J2(phi, theta)[:]
+    def cal_J_eta(self, att: Union[np.ndarray, list]):
+        self.J_eta[0:3, 0:3] = self.J1(att)[:]
+        self.J_eta[3:6, 3:6] = self.J2(att)[:]
 
     def cal_CRB(self, nu: np.ndarray):
         crb11 = np.zeros((3, 3))
@@ -242,7 +277,9 @@ class bluerov2_heavy:
         self.cal_Dn(nu)
         self.D = self.D0 + self.Dn
 
-    def cal_g_eta(self, phi, theta):
+    def cal_g_eta(self, att: Union[np.ndarray, list]):
+        phi = att[0]
+        theta = att[1]
         # self.W = self.B
         self.g_eta = np.array([(self.W - self.B) * S(theta),
                                -(self.W - self.B) * C(theta) * S(phi),
@@ -278,12 +315,33 @@ class bluerov2_heavy:
     def uuv_att_cb(self):
         return self.eta[3:6]
 
+    def uuv_dot_eta_cb(self):
+        self.cal_J_eta(self.uuv_att_cb())
+        return np.dot(self.J_eta, self.nu)
+
+    def uuv_dot_att_cb(self):
+        self.cal_J_eta(self.uuv_att_cb())
+        dot_eta = np.dot(self.J_eta, self.nu)
+        return dot_eta[3:6]
+
     def uuv_pqr_cb(self):
         return self.nu[3:6]
 
     def set_state(self, xx: np.ndarray):
         self.eta[:] = xx[[0, 1, 2, 6, 7, 8]]
         self.nu[:] = xx[[3, 4, 5, 9, 10, 11]]
+
+    def A_eta(self):
+        self.cal_J_eta(self.uuv_att_cb())
+        return np.dot(self.J_eta, self.M_inv)
+
+    def B_eta(self):
+        dJ = self.cal_dot_J_eta(self.uuv_att_cb(), self.uuv_dot_att_cb())
+        self.cal_C(self.nu)
+        self.cal_D(self.nu)
+        self.cal_g_eta(self.uuv_att_cb())
+        # t1 = np.dot(self.J_eta, np.dot(self.M_inv, np.dot(self.C + self.D, self.nu) + self.g_eta))
+        return np.dot(dJ, self.nu) - np.dot(self.J_eta, np.dot(self.M_inv, np.dot(self.C + self.D, self.nu) + self.g_eta))
 
     def ode(self, xx: np.ndarray, dis: np.ndarray):
         """
@@ -293,8 +351,8 @@ class bluerov2_heavy:
         """
         [_x, _y, _z, _vx, _vy, _vz, _phi, _theta, _psi, _p, _q, _r] = xx[0:12]
         _nu = np.array([_vx, _vy, _vz, _p, _q, _r])
-        self.cal_J_eta(_phi, _theta, _psi)  # 更新坐标变换矩阵
-        self.cal_g_eta(_phi, _theta)  # 更新浮力向量
+        self.cal_J_eta([_phi, _theta, _psi])  # 更新坐标变换矩阵
+        self.cal_g_eta([_phi, _theta, _psi])  # 更新浮力向量
         self.cal_C(_nu)
         self.cal_D(_nu)
 
