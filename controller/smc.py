@@ -21,18 +21,22 @@ class smc:
         self.dim = param.dim
         self.s = np.zeros(self.dim)
         self.ctrl = np.zeros(self.dim)
-
+    
     @staticmethod
     def sig(x, a, kt=5):
         return np.fabs(x) ** a * np.tanh(kt * x)
-
+    
     def control_update(self,
                        e_eta: np.ndarray,
                        dot_e_eta: np.ndarray,
                        dd_ref: np.ndarray,
                        A_eta: np.ndarray,
                        B_eta: np.ndarray,
-                       obs: np.ndarray, ):
+                       obs: np.ndarray,
+                       e_max: float = np.inf,
+                       de_max: float = np.inf):
+        e_eta = np.clip(-e_max, e_max, e_eta)
+        dot_e_eta = np.clip(-de_max, de_max, dot_e_eta)
         self.s = dot_e_eta + self.k1 * e_eta
         ctrl1 = -B_eta - self.k1 * dot_e_eta + dd_ref
         ctrl2 = -self.k2 * self.sig(self.s, 1) - obs

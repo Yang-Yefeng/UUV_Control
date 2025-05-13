@@ -24,7 +24,7 @@ class data_collector:
         if self.index < self.N:
             self.t[self.index][0] = data['time']
             self.tau[self.index] = data['control']
-            self.F_motor[self.index] - data['F_motor']
+            self.F_motor[self.index] = data['F_motor']
             self.ref_pos[self.index] = data['ref_pos']
             self.ref_vel[self.index] = data['ref_vel']
             self.d[self.index] = data['d']
@@ -62,7 +62,16 @@ class data_collector:
         self.state = uav_stateData[:, 1: 13]
 
     def plot_pos(self):
-        plt.figure()
+        plt.figure(figsize=(12, 4))
+        plt.subplots_adjust(
+            wspace=0.15,  # 水平间距（默认0.2）
+            hspace=0.2,  # 垂直间距（默认0.2）
+            left=0.05,  # 左边距（默认0.125）
+            right=0.99,  # 右边距（默认0.9）
+            top=0.92,  # 上边距（默认0.88）
+            bottom=0.13  # 下边距（默认0.11）
+        )
+        
         plt.subplot(1, 3, 1)
         plt.plot(self.t, self.ref_pos[:, 0], 'red')
         plt.plot(self.t, self.state[:, 0], 'blue')
@@ -120,13 +129,22 @@ class data_collector:
         plt.title('vz')
 
     def plot_att(self):
-        plt.figure()
+        plt.figure(figsize=(12, 4))
+        plt.subplots_adjust(
+            wspace=0.15,  # 水平间距（默认0.2）
+            hspace=0.2,  # 垂直间距（默认0.2）
+            left=0.05,  # 左边距（默认0.125）
+            right=0.99,  # 右边距（默认0.9）
+            top=0.92,  # 上边距（默认0.88）
+            bottom=0.13  # 下边距（默认0.11）
+        )
+        
         plt.subplot(1, 3, 1)
         plt.plot(self.t, self.ref_pos[:, 3] * 180 / np.pi, 'red')
         plt.plot(self.t, self.state[:, 6] * 180 / np.pi, 'blue')
         plt.grid(True)
         plt.ylim((-90, 90))
-        plt.yticks(np.arange(-90, 90, 10))
+        plt.yticks(np.arange(-90, 91, 30))
         plt.xlabel('time(s)')
         plt.title('roll-phi')
 
@@ -135,7 +153,7 @@ class data_collector:
         plt.plot(self.t, self.state[:, 7] * 180 / np.pi, 'blue')
         plt.grid(True)
         plt.ylim((-90, 90))
-        plt.yticks(np.arange(-90, 90, 10))
+        plt.yticks(np.arange(-90, 91, 30))
         plt.xlabel('time(s)')
         plt.title('pitch-theta')
 
@@ -144,12 +162,20 @@ class data_collector:
         plt.plot(self.t, self.state[:, 8] * 180 / np.pi, 'blue')
         plt.grid(True)
         plt.ylim((-180, 180))
-        plt.yticks(np.arange(-180, 210, 30))
+        plt.yticks(np.arange(-180, 181, 45))
         plt.xlabel('time(s)')
         plt.title('yaw-psi')
 
     def plot_force(self):
-        plt.figure()
+        plt.figure(figsize=(12, 4))
+        plt.subplots_adjust(
+            wspace=0.15,  # 水平间距（默认0.2）
+            hspace=0.2,  # 垂直间距（默认0.2）
+            left=0.05,  # 左边距（默认0.125）
+            right=0.99,  # 右边距（默认0.9）
+            top=0.92,  # 上边距（默认0.88）
+            bottom=0.13  # 下边距（默认0.11）
+        )
 
         plt.subplot(1, 3, 1)
         plt.plot(self.t, self.tau[:, 0], 'blue')  # Fx
@@ -170,7 +196,15 @@ class data_collector:
         plt.title('Fz')
 
     def plot_torque(self):
-        plt.figure()
+        plt.figure(figsize=(12, 4))
+        plt.subplots_adjust(
+            wspace=0.15,  # 水平间距（默认0.2）
+            hspace=0.2,  # 垂直间距（默认0.2）
+            left=0.05,  # 左边距（默认0.125）
+            right=0.99,  # 右边距（默认0.9）
+            top=0.92,  # 上边距（默认0.88）
+            bottom=0.13  # 下边距（默认0.11）
+        )
 
         plt.subplot(1, 3, 1)
         plt.plot(self.t, self.tau[:, 3], 'blue')  # Tx
@@ -197,46 +231,62 @@ class data_collector:
         plt.title('Tz')
 
     def plot_motor_force(self):
-        plt.figure()
-
+        plt.figure(figsize=(16, 6))
+        
+        plt.subplots_adjust(
+            wspace=0.15,  # 水平间距（默认0.2）
+            hspace=0.2,  # 垂直间距（默认0.2）
+            left=0.05,  # 左边距（默认0.125）
+            right=0.99,  # 右边距（默认0.9）
+            top=0.95,  # 上边距（默认0.88）
+            bottom=0.05  # 下边距（默认0.11）
+        )
+        
         plt.subplot(2, 4, 1)
         plt.plot(self.t, self.F_motor[:, 0], 'blue')  # M1
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M1')
         plt.grid(True)
-
+        
+        plt.subplot(2, 4, 2)
         plt.plot(self.t, self.F_motor[:, 1], 'blue')  # M2
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M2')
         plt.grid(True)
-
+        
+        plt.subplot(2, 4, 3)
         plt.plot(self.t, self.F_motor[:, 2], 'blue')  # M3
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M3')
         plt.grid(True)
-
+        
+        plt.subplot(2, 4, 4)
         plt.plot(self.t, self.F_motor[:, 3], 'blue')  # M4
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M4')
         plt.grid(True)
-
+        
+        plt.subplot(2, 4, 5)
         plt.plot(self.t, self.F_motor[:, 4], 'blue')  # M5
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M5')
         plt.grid(True)
-
+        
+        plt.subplot(2, 4, 6)
         plt.plot(self.t, self.F_motor[:, 5], 'blue')  # M6
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M6')
         plt.grid(True)
-
+        
+        plt.subplot(2, 4, 7)
         plt.plot(self.t, self.F_motor[:, 6], 'blue')  # M7
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M7')
         plt.grid(True)
-
+        
+        plt.subplot(2, 4, 8)
         plt.plot(self.t, self.F_motor[:, 7], 'blue')  # M8
-        plt.xlabel('time(s)')
+        # plt.xlabel('time(s)')
         plt.title('M8')
         plt.grid(True)
 

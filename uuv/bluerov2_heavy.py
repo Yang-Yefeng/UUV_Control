@@ -20,27 +20,45 @@ class bluerov2_heavy_param:
         self.b_c = np.array([0, 0, -0.01]).astype(float)  # uuv 的几何中心坐标
 
         '''MA 附加质量矩阵'''
-        self.Xdu = 6.36
-        self.Ydv = 7.12
-        self.Zdw = 18.68
-        self.Kdp = 0.189
-        self.Mdq = 0.135
-        self.Ndr = 0.222
+        # self.Xdu = 6.36
+        # self.Ydv = 7.12
+        # self.Zdw = 18.68
+        # self.Kdp = 0.189
+        # self.Mdq = 0.135
+        # self.Ndr = 0.222
+        self.Xdu = 5.5
+        self.Ydv = 12.7
+        self.Zdw = 14.57
+        self.Kdp = 0.12
+        self.Mdq = 0.12
+        self.Ndr = 0.12
         '''MA 附加质量矩阵'''
 
         '''D 和 Dn 矩阵中涉及的系数'''
-        self.Xu = 13.7
-        self.Xuu = 141.0
-        self.Yv = 0.
-        self.Yvv = 217.0
-        self.Zw = 33.0
-        self.Zww = 190.0
-        self.Kp = 0.
-        self.Kpp = 1.19
-        self.Mq = 0.8
-        self.Mqq = 0.47
-        self.Nr = 0.
-        self.Nrr = 1.5
+        # self.Xu = 13.7
+        # self.Xuu = 141.0
+        # self.Yv = 0.
+        # self.Yvv = 217.0
+        # self.Zw = 33.0
+        # self.Zww = 190.0
+        # self.Kp = 0.
+        # self.Kpp = 1.19
+        # self.Mq = 0.8
+        # self.Mqq = 0.47
+        # self.Nr = 0.
+        # self.Nrr = 1.5
+        self.Xu = 4.03
+        self.Yv = 6.22
+        self.Zw = 5.18
+        self.Kp = 0.07
+        self.Mq = 0.07
+        self.Nr = 0.07
+        self.Xuu = 18.18
+        self.Yvv = 21.66
+        self.Zww = 36.99
+        self.Kpp = 1.55
+        self.Mqq = 1.55
+        self.Nrr = 1.55
         '''D 和 Dn 矩阵中涉及的系数'''
 
         '''动力分配部分涉及的系数'''
@@ -171,6 +189,7 @@ class bluerov2_heavy:
         self.M_inv = np.linalg.inv(self.M)  # 广义质量矩阵的逆
 
         self.T = np.vstack((self.eps, matrix_cross_by_vec(self.r, self.eps, axis=0)))  # constant，动力分配矩阵
+        self.perinv_T = np.dot(np.linalg.inv(np.dot(self.T.T, self.T)), self.T.T)
 
         self.CRB = np.zeros((6, 6))
         self.CA = np.zeros((6, 6))  #
@@ -188,12 +207,19 @@ class bluerov2_heavy:
         self.cal_D(self.nu)
         self.cal_g_eta(self.uuv_att_cb())
 
-        self.F_max = self.cal_F(1.0)  # 电机最大推力 30.4
-        self.F_min = self.cal_F(-1.0)  # 电机最小推力 -30.4
+        # self.F_max = self.cal_F(1.0)  # 电机最大推力 30.4
+        # self.F_min = self.cal_F(-1.0)  # 电机最小推力 -30.4
+        self.F_max = 52
+        self.F_min = -52
 
         self.time = 0.
         self.n = 1
-
+    
+    def cal_Motor_F_with_sat(self, ctrl:np.ndarray) -> np.ndarray:
+        F = np.dot(self.perinv_T, ctrl)
+        self.F_motor = np.clip(F, self.F_min, self.F_max)
+        return np.dot(self.T, self.F_motor)
+    
     @staticmethod
     def J1(att: Union[np.ndarray, list]) -> np.ndarray:
         return np.dot(R_z_psi(att[2]), np.dot(R_y_theta(att[1]), R_x_phi(att[0])))
