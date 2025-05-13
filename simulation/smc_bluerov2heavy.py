@@ -72,7 +72,6 @@ if __name__ == '__main__':
                                 B_eta=uuv.B_eta(),
                                 obs=obs)
         '''control'''
-        # smc_ctrl.ctrl = np.zeros(6)
         uuv.rk44(action=smc_ctrl.ctrl, dis=dis)
 
         data_block = {'time': uuv.time,
@@ -93,5 +92,6 @@ if __name__ == '__main__':
 
     data_record.plot_pos()
     data_record.plot_att()
+    data_record.plot_force()
 
     plt.show()
