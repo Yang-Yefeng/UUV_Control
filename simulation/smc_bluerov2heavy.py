@@ -1,10 +1,9 @@
-import os
-import sys
-import datetime
-import matplotlib.pyplot as plt
-import platform
-import pandas as pd
+import os, sys, datetime, platform
 
+
+
+import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../")
@@ -28,7 +27,7 @@ else:
     new_path = cur_path + '/../datasave/smc_BlueROV2Heavy-' + cur_time + '/'
 
 DT = 0.01
-uuv_param = bluerov2_heavy_param(time_max=200)
+uuv_param = bluerov2_heavy_param(time_max=20)
 # uuv_param.ignore_Coriolis = True
 ctrl_param = smc_param(
     dim=6,
@@ -102,5 +101,5 @@ if __name__ == '__main__':
     data_record.plot_force()
     data_record.plot_torque()
     data_record.plot_motor_force()
-    
+
     plt.show()
