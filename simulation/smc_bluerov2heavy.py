@@ -27,22 +27,22 @@ else:
     new_path = cur_path + '/../datasave/smc_BlueROV2Heavy-' + cur_time + '/'
 
 DT = 0.01
-uuv_param = bluerov2_heavy_param(time_max=20)
+uuv_param = bluerov2_heavy_param(time_max=600)
 # uuv_param.ignore_Coriolis = True
 ctrl_param = smc_param(
     dim=6,
     dt=DT,
-    k1=np.array([1, 3, 3, 3, 3, 1]).astype(float),
-    k2=np.array([1, 1, 1, 5., 5., 1.]).astype(float))
+    k1=np.array([1, 1, 1, 0.2, 0.2, 0.2]).astype(float),
+    k2=np.array([1, 1, 1, 0.5, 0.5, 0.5]).astype(float))
 
 if __name__ == '__main__':
     uuv = bluerov2_heavy(uuv_param)
     smc_ctrl = smc(ctrl_param)
     data_record = data_collector(N=int(uuv.time_max / uuv.dt))
     
-    ra = np.array([5, 5, 5, 0, 0, 0])  # 振幅 x y z phi theta psi
-    rp = np.array([200, 200, 200, 1, 1, 1])  # 周期
-    rba = np.array([5, 5, 0, 0, 0, 0])  # 初始位置偏移
+    ra = np.array([20, 20, 0, 0, 0, 0])  # 振幅 x y z phi theta psi
+    rp = np.array([600, 600, 600, 1, 1, 1])  # 周期
+    rba = np.array([0, 0, -10, 0, 0, 0])  # 初始位置偏移
     rbp = np.array([0, np.pi / 2, 0, 0, 0, 0])  # 初始相位偏移
     
     while uuv.time < uuv.time_max - uuv.dt / 2:
@@ -51,9 +51,11 @@ if __name__ == '__main__':
         
         dis = generate_uncertainty(uuv.time, is_ideal=IS_IDEAL)
         ref, d_ref, dd_ref = ref_uuv_circle(uuv.time, ra, rp, rba, rbp)
+        
+        '''航向角设计'''
         ref[5] = np.arctan2(ref[1], ref[0])
-        # print(ref[5]*180/np.pi)
         d_ref[5] = (d_ref[1] * ref[0] - ref[1] * d_ref[0]) / (ref[0] ** 2 + ref[1] ** 2)
+        '''航向角设计'''
         
         e = uuv.eta - ref
         de = uuv.uuv_dot_eta_cb() - d_ref
@@ -74,8 +76,7 @@ if __name__ == '__main__':
                                 obs=obs,
                                 e_max=np.inf,
                                 de_max=np.inf)
-        ctrl = uuv.cal_Motor_F_with_sat(smc_ctrl.ctrl)
-        # ctrl = smc_ctrl.ctrl
+        ctrl = uuv.cal_Motor_F_with_sat(smc_ctrl.ctrl, ideal=True)
         '''control'''
         # print(smc_ctrl.ctrl)
         uuv.rk44(action=ctrl, dis=dis)

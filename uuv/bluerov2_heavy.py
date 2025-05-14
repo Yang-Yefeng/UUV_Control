@@ -214,11 +214,15 @@ class bluerov2_heavy:
 
         self.time = 0.
         self.n = 1
-    
-    def cal_Motor_F_with_sat(self, ctrl:np.ndarray) -> np.ndarray:
+        
+    def cal_Motor_F_with_sat(self, ctrl: np.ndarray, ideal: bool = False) -> np.ndarray:
         F = np.dot(self.perinv_T, ctrl)
-        self.F_motor = np.clip(F, self.F_min, self.F_max)
-        return np.dot(self.T, self.F_motor)
+        if ideal:
+            self.F_motor = F
+            return ctrl
+        else:
+            self.F_motor = np.clip(F, self.F_min, self.F_max)
+            return np.dot(self.T, self.F_motor)
     
     @staticmethod
     def J1(att: Union[np.ndarray, list]) -> np.ndarray:
