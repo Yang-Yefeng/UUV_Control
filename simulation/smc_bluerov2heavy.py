@@ -37,13 +37,14 @@ ctrl_param = smc_param(
 
 if __name__ == '__main__':
     uuv = bluerov2_heavy(uuv_param)
+    uuv.eta = np.array([-5, -10, 2, 0, 0, 0]).astype(float)
     smc_ctrl = smc(ctrl_param)
     data_record = data_collector(N=int(uuv.time_max / uuv.dt))
     
     ra = np.array([20, 20, 0, 0, 0, 0])  # 振幅 x y z phi theta psi
-    rp = np.array([600, 600, 600, 1, 1, 1])  # 周期
-    rba = np.array([0, 0, -10, 0, 0, 0])  # 初始位置偏移
-    rbp = np.array([0, np.pi / 2, 0, 0, 0, 0])  # 初始相位偏移
+    rp = np.array([120, 120, 600, 1, 1, 1])  # 周期
+    rba = np.array([0, 0, 3, 0, 0, 0])  # 初始位置偏移
+    rbp = np.array([0, 3 * np.pi / 2, 0, 0, 0, 0])  # 初始相位偏移
     
     while uuv.time < uuv.time_max - uuv.dt / 2:
         if uuv.n % int(1 / uuv.dt) == 0:
@@ -76,7 +77,8 @@ if __name__ == '__main__':
                                 obs=obs,
                                 e_max=np.inf,
                                 de_max=np.inf)
-        ctrl = uuv.cal_Motor_F_with_sat(smc_ctrl.ctrl, ideal=True)
+        # ctrl = uuv.cal_Motor_F_with_sat(smc_ctrl.ctrl, ideal=False)
+        ctrl = uuv.cal_Motor_F_with_sat2(smc_ctrl.ctrl)
         '''control'''
         # print(smc_ctrl.ctrl)
         uuv.rk44(action=ctrl, dis=dis)

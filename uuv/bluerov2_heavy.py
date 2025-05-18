@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Union
 from utils.utils import *
+from scipy.optimize import minimize
 
 
 class bluerov2_heavy_param:
@@ -223,6 +224,16 @@ class bluerov2_heavy:
         else:
             self.F_motor = np.clip(F, self.F_min, self.F_max)
             return np.dot(self.T, self.F_motor)
+
+    def cal_Motor_F_with_sat2(self, ctrl: np.ndarray) -> np.ndarray:
+        def objective(F):
+            return np.sum((np.dot(self.T, F) - ctrl) ** 2)
+        F0 = np.zeros(8)
+        bounds = [(self.F_min, self.F_max) for _ in range(8)]
+        constraints = {'type': 'eq', 'fun': lambda u: np.dot(self.T, u) - ctrl}
+        result = minimize(objective, F0, bounds=bounds, constraints=constraints)
+        self.F_motor = np.array(result.x)
+        return np.dot(self.T, self.F_motor)
     
     @staticmethod
     def J1(att: Union[np.ndarray, list]) -> np.ndarray:

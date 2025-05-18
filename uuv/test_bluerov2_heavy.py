@@ -25,6 +25,8 @@ if __name__ == '__main__':
 
     uuv = bluerov2_heavy(uuv_param)
     data_record = data_collector(N=int(uuv.time_max / uuv.dt))
+    np.set_printoptions(precision=4, floatmode='fixed', suppress=True)
+    print(uuv.T)
 
     ra = np.array([0, 0, 0, 0, 0, 0])   # 振幅 x y z phi theta psi
     rp = np.array([1, 1, 1, 1, 1, 1])   # 周期
